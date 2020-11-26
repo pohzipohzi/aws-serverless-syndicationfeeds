@@ -5,20 +5,27 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/mmcdole/gofeed"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
-	ddbTestEndpoint  = "http://localhost:8000"
-	ddbTestAwsRegion = "us-west-2"
+	ddbTestEndpoint        = "http://localhost:8000"
+	ddbTestAccessKeyID     = "fakeMyKeyId"
+	ddbTestSecretAccessKey = "fakeSecretAccessKey"
 )
 
 func Test_DdbUpdateAndGet(t *testing.T) {
-	sess, err := session.NewSession(aws.NewConfig().WithEndpoint(ddbTestEndpoint).WithRegion(ddbTestAwsRegion))
-	assert.Nil(t, err)
+	sess, err := session.NewSession(
+		aws.NewConfig().
+			WithEndpoint(ddbTestEndpoint).
+			WithCredentials(credentials.NewStaticCredentials(ddbTestAccessKeyID, ddbTestSecretAccessKey, "")),
+	)
+	require.Nil(t, err)
 	ddb := dynamodb.New(sess)
 	_, err = ddb.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
@@ -44,11 +51,12 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 		TableName:   aws.String(ddbTableFeed),
 		BillingMode: aws.String("PAY_PER_REQUEST"),
 	})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 	defer func() {
-		_, _ = ddb.DeleteTable(&dynamodb.DeleteTableInput{
+		_, err = ddb.DeleteTable(&dynamodb.DeleteTableInput{
 			TableName: aws.String(ddbTableFeed),
 		})
+		require.Nil(t, err)
 	}()
 	feeds := []*gofeed.Feed{
 		{
@@ -86,12 +94,12 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 	for _, f := range feeds {
 		for _, i := range f.Items {
 			err := ddbUpdateItem(ddb, f, i)
-			assert.Nil(t, err)
+			require.Nil(t, err)
 		}
 	}
 	for _, f := range feeds {
 		res, err := ddbGetItems(ddb, f)
-		assert.Nil(t, err)
+		require.Nil(t, err)
 		for _, expect := range f.Items {
 			assert.Equal(t, expect, res[FeedCompositeKey{
 				Title:    f.Title,
