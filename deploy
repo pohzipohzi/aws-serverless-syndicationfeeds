@@ -1,0 +1,8 @@
+#!/bin/bash
+if [ "$#" -ne 1 ]; then
+    echo "Usage: ./script <function-name>"
+    exit 0
+fi
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o main .
+zip main.zip main
+aws lambda update-function-code --function-name $1 --zip-file fileb://main.zip
