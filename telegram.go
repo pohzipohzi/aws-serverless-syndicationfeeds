@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -29,8 +30,12 @@ func (h *Telegram) Handle(i *gofeed.Item) error {
 	text += fmt.Sprintf("Description: %s\n", truncate(i.Description, 100))
 	text += fmt.Sprintf("Published: %s\n", i.Published)
 	text += fmt.Sprintf("Link: %s\n", i.Link)
-	get := fmt.Sprintf(telegramSendMessageEndpoint, h.token, h.chatID, url.QueryEscape(text))
-	rc, err := http.Get(get)
+	getURL := fmt.Sprintf(telegramSendMessageEndpoint, h.token, h.chatID, url.QueryEscape(text))
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, getURL, nil)
+	if err != nil {
+		return err
+	}
+	rc, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}

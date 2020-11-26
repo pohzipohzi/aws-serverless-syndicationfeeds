@@ -16,7 +16,7 @@ import (
 
 const (
 	envUrls             = "URLS"
-	envTelegramBotToken = "TELEGRAM_BOT_TOKEN"
+	envTelegramBotToken = "TELEGRAM_BOT_TOKEN" //nolint:gosec
 	envTelegramChatID   = "TELEGRAM_CHAT_ID"
 )
 
@@ -43,7 +43,11 @@ func lambdaHandler() error {
 	}
 
 	fp := gofeed.NewParser()
-	ddb := dynamodb.New(session.New())
+	sess, err := session.NewSession()
+	if err != nil {
+		errors = multierror.Append(errors, err)
+	}
+	ddb := dynamodb.New(sess)
 	for _, u := range urls {
 		feed, err := fp.ParseURL(u)
 		if err != nil {

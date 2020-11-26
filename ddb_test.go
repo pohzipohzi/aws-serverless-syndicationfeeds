@@ -17,11 +17,10 @@ const (
 )
 
 func Test_DdbUpdateAndGet(t *testing.T) {
-	ddb := dynamodb.New(
-		session.New(),
-		aws.NewConfig().WithEndpoint(ddbTestEndpoint).WithRegion(ddbTestAwsRegion),
-	)
-	_, err := ddb.CreateTable(&dynamodb.CreateTableInput{
+	sess, err := session.NewSession(aws.NewConfig().WithEndpoint(ddbTestEndpoint).WithRegion(ddbTestAwsRegion))
+	assert.Nil(t, err)
+	ddb := dynamodb.New(sess)
+	_, err = ddb.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
 				AttributeName: aws.String(ddbAttributeTitle),
@@ -46,9 +45,11 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 		BillingMode: aws.String("PAY_PER_REQUEST"),
 	})
 	assert.Nil(t, err)
-	defer ddb.DeleteTable(&dynamodb.DeleteTableInput{
-		TableName: aws.String(ddbTableFeed),
-	})
+	defer func() {
+		_, _ = ddb.DeleteTable(&dynamodb.DeleteTableInput{
+			TableName: aws.String(ddbTableFeed),
+		})
+	}()
 	feeds := []*gofeed.Feed{
 		{
 			Title: "feed 1",
