@@ -15,6 +15,7 @@ import (
 
 const (
 	ddbTestEndpoint        = "http://localhost:8000"
+	ddbTestRegion          = "us-west-2"
 	ddbTestAccessKeyID     = "fakeMyKeyId"
 	ddbTestSecretAccessKey = "fakeSecretAccessKey"
 )
@@ -23,6 +24,7 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 	sess, err := session.NewSession(
 		aws.NewConfig().
 			WithEndpoint(ddbTestEndpoint).
+			WithRegion(ddbTestRegion).
 			WithCredentials(credentials.NewStaticCredentials(ddbTestAccessKeyID, ddbTestSecretAccessKey, "")),
 	)
 	require.Nil(t, err)
