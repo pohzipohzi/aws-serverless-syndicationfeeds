@@ -69,14 +69,14 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 					Title:           "item title 1",
 					Description:     "item description 1",
 					Link:            "link 1",
-					PublishedParsed: pt(time.Unix(1, 0)),
+					PublishedParsed: pt(time.Unix(1, 0).UTC()),
 				},
 				{
 					GUID:            "guid2",
 					Title:           "item title 2",
 					Description:     "item description 2",
 					Link:            "link 2",
-					PublishedParsed: pt(time.Unix(2, 0)),
+					PublishedParsed: pt(time.Unix(2, 0).UTC()),
 				},
 			},
 		},
@@ -88,7 +88,7 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 					Title:           "item title 1",
 					Description:     "item description 1",
 					Link:            "link 1",
-					PublishedParsed: pt(time.Unix(3, 0)),
+					PublishedParsed: pt(time.Unix(3, 0).UTC()),
 				},
 			},
 		},
@@ -112,7 +112,7 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 }
 
 func Test_TimeConversion(t *testing.T) {
-	tm := time.Unix(1, 0)
+	tm := time.Unix(1, 0).UTC()
 	assert.Equal(t, &tm, atot(ttoa(&tm)))
 }
 
@@ -155,18 +155,18 @@ func Test_shouldHandleItem(t *testing.T) {
 		{
 			desc: "item exists in ddb",
 			f:    &gofeed.Feed{Title: "t"},
-			i:    &gofeed.Item{GUID: "g", PublishedParsed: pt(time.Unix(1, 0))},
+			i:    &gofeed.Item{GUID: "g", PublishedParsed: pt(time.Unix(1, 0).UTC())},
 			di: map[FeedCompositeKey]*gofeed.Item{
-				{Title: "t", ItemGUID: "g"}: {PublishedParsed: pt(time.Unix(1, 0))},
+				{Title: "t", ItemGUID: "g"}: {PublishedParsed: pt(time.Unix(1, 0).UTC())},
 			},
 			expect: false,
 		},
 		{
 			desc: "item exists in ddb, but pubdate is greater",
 			f:    &gofeed.Feed{Title: "t"},
-			i:    &gofeed.Item{GUID: "g", PublishedParsed: pt(time.Unix(2, 0))},
+			i:    &gofeed.Item{GUID: "g", PublishedParsed: pt(time.Unix(2, 0).UTC())},
 			di: map[FeedCompositeKey]*gofeed.Item{
-				{Title: "t", ItemGUID: "g"}: {PublishedParsed: pt(time.Unix(1, 0))},
+				{Title: "t", ItemGUID: "g"}: {PublishedParsed: pt(time.Unix(1, 0).UTC())},
 			},
 			expect: true,
 		},
