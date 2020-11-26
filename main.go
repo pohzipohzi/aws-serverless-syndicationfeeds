@@ -14,10 +14,11 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-const (
-	envUrls             = "URLS"
-	envTelegramBotToken = "TELEGRAM_BOT_TOKEN" //nolint:gosec
-	envTelegramChatID   = "TELEGRAM_CHAT_ID"
+//nolint:gochecknoglobals
+var (
+	envUrls             = os.Getenv("URLS")
+	envTelegramBotToken = os.Getenv("TELEGRAM_BOT_TOKEN") //nolint:gosec
+	envTelegramChatID   = os.Getenv("TELEGRAM_CHAT_ID")
 )
 
 type ItemHandler interface {
@@ -38,7 +39,7 @@ func lambdaHandler() error {
 
 	var errors *multierror.Error
 	urls := []string{}
-	if err := json.Unmarshal([]byte(os.Getenv(envUrls)), &urls); err != nil {
+	if err := json.Unmarshal([]byte(envUrls), &urls); err != nil {
 		return err
 	}
 
@@ -86,12 +87,10 @@ func lambdaHandler() error {
 
 func getItemHandlers() []ItemHandler {
 	ret := []ItemHandler{}
-	telegramBotToken := os.Getenv(envTelegramBotToken)
-	telegramChatID := os.Getenv(envTelegramChatID)
-	if telegramBotToken != "" && telegramChatID != "" {
+	if envTelegramBotToken != "" && envTelegramChatID != "" {
 		ret = append(ret, &Telegram{
-			token:  os.Getenv(envTelegramBotToken),
-			chatID: os.Getenv(envTelegramChatID),
+			token:  envTelegramBotToken,
+			chatID: envTelegramChatID,
 		})
 	}
 	return ret
