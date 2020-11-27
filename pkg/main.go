@@ -17,6 +17,7 @@ import (
 //nolint:gochecknoglobals
 var (
 	envUrls             = os.Getenv("URLS")
+	envDdbTableName     = os.Getenv("DDB_TABLE_NAME")
 	envTelegramBotToken = os.Getenv("TELEGRAM_BOT_TOKEN") //nolint:gosec
 	envTelegramChatID   = os.Getenv("TELEGRAM_CHAT_ID")
 )
@@ -34,6 +35,11 @@ func lambdaHandler() error {
 	handlers := getItemHandlers()
 	if len(handlers) == 0 {
 		log.Println("no handler configured")
+		return nil
+	}
+
+	if envDdbTableName == "" {
+		log.Println("ddb table name not configured")
 		return nil
 	}
 

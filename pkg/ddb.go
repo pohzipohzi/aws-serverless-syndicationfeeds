@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	ddbTableFeed                = "Feed"
 	ddbAttributeTitle           = "Title"
 	ddbAttributeItemGUID        = "ItemGUID"
 	ddbAttributeItemPublishedAt = "ItemPublishedAt"
@@ -29,7 +28,7 @@ func ddbGetItems(ddb *dynamodb.DynamoDB, f *gofeed.Feed) (map[FeedCompositeKey]*
 	}
 	input := &dynamodb.BatchGetItemInput{
 		RequestItems: map[string]*dynamodb.KeysAndAttributes{
-			ddbTableFeed: {Keys: keysFromFeed(f)},
+			envDdbTableName: {Keys: keysFromFeed(f)},
 		},
 	}
 	res, err := ddb.BatchGetItem(input)
@@ -54,11 +53,11 @@ func keysFromFeed(f *gofeed.Feed) []map[string]*dynamodb.AttributeValue {
 }
 
 func itemMapFromBatchGetItemOutput(res *dynamodb.BatchGetItemOutput) map[FeedCompositeKey]*gofeed.Item {
-	if res == nil || res.Responses == nil || res.Responses[ddbTableFeed] == nil {
+	if res == nil || res.Responses == nil || res.Responses[envDdbTableName] == nil {
 		return nil
 	}
 	ret := map[FeedCompositeKey]*gofeed.Item{}
-	for _, r := range res.Responses[ddbTableFeed] {
+	for _, r := range res.Responses[envDdbTableName] {
 		if r == nil {
 			continue
 		}
@@ -97,7 +96,7 @@ func ddbUpdateItem(ddb *dynamodb.DynamoDB, f *gofeed.Feed, i *gofeed.Item) error
 			ddbAttributeTitle:    {S: aws.String(f.Title)},
 			ddbAttributeItemGUID: {S: aws.String(i.GUID)},
 		},
-		TableName:        aws.String(ddbTableFeed),
+		TableName:        aws.String(envDdbTableName),
 		UpdateExpression: aws.String("SET #P = :p, #T = :t, #D = :d, #L = :l"),
 	}
 	_, err := ddb.UpdateItem(input)

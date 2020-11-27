@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  DynamoDBTable: 
+    Type: "AWS::DynamoDB::Table"
+    Properties: 
+      AttributeDefinitions: 
+        - 
+          AttributeName: "Title"
+          AttributeType: "S"
+        - 
+          AttributeName: "ItemGUID"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "Title"
+          KeyType: "HASH"
+        - 
+          AttributeName: "ItemGUID"
+          KeyType: "RANGE"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      TableName: "Feed"
+  LambdaRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  LambdaRolePolicy: 
+    Type: "AWS::IAM::Policy"
+    Properties: 
+      PolicyName: "DynamoDBLimitedAccess"
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Action:
+              - "dynamodb:BatchGetItem"
+              - "dynamodb:UpdateItem"
+            Resource:
+              Fn::GetAtt: 
+                - "DynamoDBTable"
+                - "Arn"
+      Roles:
+        -
+          Ref: "LambdaRole"
+  LambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      # AWS allows us to deploy our lambda function via direct upload or S3.
+      # Within the CloudFormation template, the Code.ZipFile option is only
+      # supported on some no-go runtimes, leaving us with S3 as the remaining
+      # code deployment option. Creating an S3 bucket then referencing it in
+      # the CloudFormation template however results in a situation where the
+      # newly created bucket will not contain the zip file we want to upload,
+      # thus referencing via S3Key will fail. The alternative would be to first
+      # create the bucket before deploying the template, as suggested in
+      # https://github.com/awsdocs/aws-lambda-developer-guide/tree/master/sample-apps/blank-go,
+      # which causes our CloudFormation stack to be incomplete
+      #
+      # Here we opt for a "less cumbersome" approach where we create the
+      # lambda function in a runtime that supports Code.ZipFile, before
+      # directly modifying the function via CLI
+      Runtime: nodejs12.x
+      Role:
+        Fn::GetAtt: 
+          - "LambdaRole"
+          - "Arn"
+      Handler: "main"
+      Code:
+        ZipFile: "placeholder"
+      Environment:
+        Variables:
+          DDB_TABLE_NAME:
+            Ref: "DynamoDBTable"
+          # (required) a json string list of urls that we want to scrape
+          URLS: "[\"change\",\"me\"]"
+          # (optional) settings for telegram
+          TELEGRAM_BOT_TOKEN: ""
+          TELEGRAM_CHAT_ID: ""
+      Timeout: 60
+      TracingConfig:
+        Mode: "Active"
+  ScheduledRule: 
+    Type: "AWS::Events::Rule"
+    Properties: 
+      Description: "ScheduledRule"
+      ScheduleExpression: "rate(5 minutes)"
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: 
+            Fn::GetAtt: 
+              - "LambdaFunction"
+              - "Arn"
+          Id: "LambdaFunctionId"
+  PermissionForEventsToInvokeLambda: 
+    Type: "AWS::Lambda::Permission"
+    Properties: 
+      FunctionName:
+        Ref: "LambdaFunction"
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: 
+        Fn::GetAtt: 
+          - "ScheduledRule"
+          - "Arn"

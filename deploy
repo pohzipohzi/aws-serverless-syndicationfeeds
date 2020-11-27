@@ -1,8 +1,30 @@
 #!/bin/bash
-if [ "$#" -ne 1 ]; then
-    echo "Usage: ./script <function-name>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: ./<script> <stack-name> <template-file>"
     exit 0
 fi
+
+set -euo pipefail
+
+aws cloudformation deploy\
+        --stack-name $1\
+        --template-file $2\
+        --capabilities CAPABILITY_IAM
+
+FUNCTION_NAME=$(aws cloudformation describe-stack-resource\
+        --stack-name $1\
+        --logical-resource-id LambdaFunction\
+        --query StackResourceDetail.PhysicalResourceId\
+        --output text)
+
+aws lambda update-function-configuration\
+        --function-name $FUNCTION_NAME\
+        --runtime go1.x
+
+pushd pkg
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o main .
 zip main.zip main
-aws lambda update-function-code --function-name $1 --zip-file fileb://main.zip
+aws lambda update-function-code\
+        --function-name $FUNCTION_NAME\
+        --zip-file fileb://main.zip
+popd

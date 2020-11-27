@@ -50,13 +50,13 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 				KeyType:       aws.String("RANGE"),
 			},
 		},
-		TableName:   aws.String(ddbTableFeed),
+		TableName:   aws.String(envDdbTableName),
 		BillingMode: aws.String("PAY_PER_REQUEST"),
 	})
 	require.Nil(t, err)
 	defer func() {
 		_, err = ddb.DeleteTable(&dynamodb.DeleteTableInput{
-			TableName: aws.String(ddbTableFeed),
+			TableName: aws.String(envDdbTableName),
 		})
 		require.Nil(t, err)
 	}()
