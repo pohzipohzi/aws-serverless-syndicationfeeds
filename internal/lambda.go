@@ -2,7 +2,8 @@ package internal
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
+	"lambda-feed-notifier/internal/handlers"
 	"os"
 	"sort"
 
@@ -16,52 +17,45 @@ import (
 
 //nolint:gochecknoglobals
 var (
-	envUrls             = os.Getenv("URLS")
-	envDdbTableName     = os.Getenv("DDB_TABLE_NAME")
-	envTelegramBotToken = os.Getenv("TELEGRAM_BOT_TOKEN") //nolint:gosec
-	envTelegramChatID   = os.Getenv("TELEGRAM_CHAT_ID")
+	envUrls         = os.Getenv("URLS")
+	envDdbTableName = os.Getenv("DDB_TABLE_NAME")
 )
-
-type ItemHandler interface {
-	fmt.Stringer
-	Handle(*gofeed.Item) error
-}
 
 func Main() error {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	handlers := getItemHandlers()
-	if len(handlers) == 0 {
-		log.Fatal().Msg("no handler configured")
+	ha := handlers.All()
+	if len(ha) == 0 {
+		return errors.New("no handler configured")
 	}
 
 	if envDdbTableName == "" {
-		log.Fatal().Msg("ddb table name not configured")
+		return errors.New("ddb table name not configured")
 	}
 
-	var errors *multierror.Error
 	urls := []string{}
 	if err := json.Unmarshal([]byte(envUrls), &urls); err != nil {
-		return err
+		return errors.New("invalid urls")
 	}
 
+	var errs *multierror.Error
 	fp := gofeed.NewParser()
 	sess, err := session.NewSession()
 	if err != nil {
-		errors = multierror.Append(errors, err)
+		errs = multierror.Append(errs, err)
 	}
 	ddb := dynamodb.New(sess)
 	for _, u := range urls {
 		feed, err := fp.ParseURL(u)
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			errs = multierror.Append(errs, err)
 			continue
 		}
 		log.Info().Int("len_items", len(feed.Items)).Str("url", u).Msg("successfully parsed feed url")
 		sort.Sort(feed) // sort items by publish time
 		ddbItems, err := ddbGetItems(ddb, feed)
 		if err != nil {
-			errors = multierror.Append(errors, err)
+			errs = multierror.Append(errs, err)
 			continue
 		}
 		for _, i := range feed.Items {
@@ -71,12 +65,12 @@ func Main() error {
 			}
 			err = ddbUpdateItem(ddb, feed, i)
 			if err != nil {
-				errors = multierror.Append(errors, err)
+				errs = multierror.Append(errs, err)
 			}
-			for _, h := range handlers {
+			for _, h := range ha {
 				err = h.Handle(i)
 				if err != nil {
-					errors = multierror.Append(errors, err)
+					errs = multierror.Append(errs, err)
 				} else {
 					log.Info().Stringer("handler", h).Msg("successfully handled item")
 				}
@@ -84,16 +78,5 @@ func Main() error {
 		}
 	}
 
-	return errors.ErrorOrNil()
-}
-
-func getItemHandlers() []ItemHandler {
-	ret := []ItemHandler{}
-	if envTelegramBotToken != "" && envTelegramChatID != "" {
-		ret = append(ret, &Telegram{
-			token:  envTelegramBotToken,
-			chatID: envTelegramChatID,
-		})
-	}
-	return ret
+	return errs.ErrorOrNil()
 }

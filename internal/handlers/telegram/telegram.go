@@ -1,4 +1,4 @@
-package internal
+package telegram
 
 import (
 	"context"
@@ -11,20 +11,25 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	telegramSendMessageEndpoint = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s"
-)
+const telegramSendMessageEndpoint = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s"
 
-type Telegram struct {
+type Handler struct {
 	token  string
 	chatID string
 }
 
-func (h *Telegram) String() string {
+func New(token, chatID string) *Handler {
+	return &Handler{
+		token:  token,
+		chatID: chatID,
+	}
+}
+
+func (h *Handler) String() string {
 	return "telegram"
 }
 
-func (h *Telegram) Handle(i *gofeed.Item) error {
+func (h *Handler) Handle(i *gofeed.Item) error {
 	var text string
 	text += fmt.Sprintf("Title: %s\n", i.Title)
 	text += fmt.Sprintf("Description: %s\n", truncate(i.Description, 100))
