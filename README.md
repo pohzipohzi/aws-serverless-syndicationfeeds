@@ -1,12 +1,12 @@
 # lambda-feed-notifier
+[![Build Status](https://travis-ci.com/pohzipohzi/lambda-feed-notifier.svg?branch=main)](https://travis-ci.com/pohzipohzi/lambda-feed-notifier)
+[![Coverage Status](https://coveralls.io/repos/github/pohzipohzi/lambda-feed-notifier/badge.svg?branch=main)](https://coveralls.io/github/pohzipohzi/lambda-feed-notifier?branch=main)
 
-## Overview
-
-Scrapes rss/atom feeds for new items and notifies configured recipients via AWS Lambda. The Lambda function is triggered by an EventBridge scheduled rule, and events are deduplicated by caching them on DynamoDB. A CloudFormation template is provided to provision the required resources.
+Scrapes rss/atom feeds and notifies configured recipients of new items via AWS Lambda. The Lambda function is triggered by an EventBridge scheduled rule, and notifications are deduplicated by caching feed items on DynamoDB. A CloudFormation template is provided to provision the required resources.
 
 ## Cost
 
-Costing depends on the number of feeds scraped and the scraping interval. At the time of writing, scraping <10 feeds every 5 minutes lands me safely within free tier.
+Costing depends on the time it takes to scrape and notify feeds, as well as the scraping interval. At the time of writing, scraping 5 feeds of around 10 items each and sending messages to a telegram bot every 5 minutes is within free tier.
 
 ## Usage
 
