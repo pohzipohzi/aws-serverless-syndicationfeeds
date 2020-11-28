@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"lambda-feed-notifier/internal/handlers"
 	"os"
 	"sort"
@@ -35,7 +36,7 @@ func Main() error {
 
 	urls := []string{}
 	if err := json.Unmarshal([]byte(envUrls), &urls); err != nil {
-		return errors.New("invalid urls")
+		return fmt.Errorf("failed to unmarshal urls: %w", err)
 	}
 
 	var errs *multierror.Error
