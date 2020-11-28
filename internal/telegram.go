@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 
 	"github.com/mmcdole/gofeed"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -44,7 +44,7 @@ func (h *Telegram) Handle(i *gofeed.Item) error {
 	if err != nil {
 		return err
 	}
-	log.Println(string(b))
+	log.Info().Bytes("response", b).Msg("successfully sent message to telegram")
 	return nil
 }
 

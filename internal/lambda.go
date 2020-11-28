@@ -3,7 +3,6 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"sort"
 
@@ -11,6 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/hashicorp/go-multierror"
 	"github.com/mmcdole/gofeed"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 //nolint:gochecknoglobals
@@ -27,15 +28,15 @@ type ItemHandler interface {
 }
 
 func Main() error {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
 	handlers := getItemHandlers()
 	if len(handlers) == 0 {
-		log.Println("no handler configured")
-		return nil
+		log.Fatal().Msg("no handler configured")
 	}
 
 	if envDdbTableName == "" {
-		log.Println("ddb table name not configured")
-		return nil
+		log.Fatal().Msg("ddb table name not configured")
 	}
 
 	var errors *multierror.Error
@@ -56,7 +57,7 @@ func Main() error {
 			errors = multierror.Append(errors, err)
 			continue
 		}
-		log.Printf("found %d items for url %s\n", len(feed.Items), u)
+		log.Info().Int("len_items", len(feed.Items)).Str("url", u).Msg("successfully parsed feed url")
 		sort.Sort(feed) // sort items by publish time
 		ddbItems, err := ddbGetItems(ddb, feed)
 		if err != nil {
@@ -65,7 +66,7 @@ func Main() error {
 		}
 		for _, i := range feed.Items {
 			if !shouldHandleItem(feed, i, ddbItems) {
-				log.Printf("skipped handling item %s\n", i.GUID)
+				log.Info().Str("guid", i.GUID).Msg("skipped handling item")
 				continue
 			}
 			err = ddbUpdateItem(ddb, feed, i)
@@ -77,7 +78,7 @@ func Main() error {
 				if err != nil {
 					errors = multierror.Append(errors, err)
 				} else {
-					log.Printf("%s handler successfully completed\n", h)
+					log.Info().Stringer("handler", h).Msg("successfully handled item")
 				}
 			}
 		}
