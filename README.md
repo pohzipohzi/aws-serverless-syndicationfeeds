@@ -4,6 +4,10 @@
 
 Scrapes rss/atom feeds and notifies configured recipients of new items via AWS Lambda. The Lambda function is triggered by an EventBridge scheduled rule, and notifications are deduplicated by caching feed items on DynamoDB. A CloudFormation template is provided to provision the required resources.
 
+<p align="center">
+  <img src="arch.svg">
+</p>
+
 ## Cost
 
 Costing depends on the time it takes to scrape and notify feeds, as well as the scraping interval. At the time of writing, scraping 5 feeds of around 10 items each and sending messages to a telegram bot every 5 minutes is within free tier.
