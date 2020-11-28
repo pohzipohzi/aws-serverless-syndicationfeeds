@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"encoding/json"
@@ -7,7 +7,6 @@ import (
 	"os"
 	"sort"
 
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/hashicorp/go-multierror"
@@ -27,11 +26,7 @@ type ItemHandler interface {
 	Handle(*gofeed.Item) error
 }
 
-func main() {
-	lambda.Start(lambdaHandler)
-}
-
-func lambdaHandler() error {
+func Main() error {
 	handlers := getItemHandlers()
 	if len(handlers) == 0 {
 		log.Println("no handler configured")

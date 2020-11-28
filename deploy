@@ -9,7 +9,8 @@ set -euo pipefail
 aws cloudformation deploy\
         --stack-name $1\
         --template-file $2\
-        --capabilities CAPABILITY_IAM
+        --capabilities CAPABILITY_IAM\
+        --no-fail-on-empty-changeset
 
 FUNCTION_NAME=$(aws cloudformation describe-stack-resource\
         --stack-name $1\
@@ -21,10 +22,8 @@ aws lambda update-function-configuration\
         --function-name $FUNCTION_NAME\
         --runtime go1.x
 
-pushd pkg
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o main .
 zip main.zip main
 aws lambda update-function-code\
         --function-name $FUNCTION_NAME\
         --zip-file fileb://main.zip
-popd
