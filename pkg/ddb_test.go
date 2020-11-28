@@ -18,9 +18,15 @@ const (
 	ddbTestRegion          = "us-west-2"
 	ddbTestAccessKeyID     = "fakeMyKeyId"
 	ddbTestSecretAccessKey = "fakeSecretAccessKey"
+	ddbTestTableName       = "Feed"
 )
 
 func Test_DdbUpdateAndGet(t *testing.T) {
+	defer func(orig string) {
+		envDdbTableName = orig
+	}(envDdbTableName)
+	envDdbTableName = ddbTestTableName
+
 	sess, err := session.NewSession(
 		aws.NewConfig().
 			WithEndpoint(ddbTestEndpoint).
@@ -28,6 +34,7 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 			WithCredentials(credentials.NewStaticCredentials(ddbTestAccessKeyID, ddbTestSecretAccessKey, "")),
 	)
 	require.Nil(t, err)
+
 	ddb := dynamodb.New(sess)
 	_, err = ddb.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
@@ -54,12 +61,14 @@ func Test_DdbUpdateAndGet(t *testing.T) {
 		BillingMode: aws.String("PAY_PER_REQUEST"),
 	})
 	require.Nil(t, err)
+
 	defer func() {
 		_, err = ddb.DeleteTable(&dynamodb.DeleteTableInput{
 			TableName: aws.String(envDdbTableName),
 		})
 		require.Nil(t, err)
 	}()
+
 	feeds := []*gofeed.Feed{
 		{
 			Title: "feed 1",
