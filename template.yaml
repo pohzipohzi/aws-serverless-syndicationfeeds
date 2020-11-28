@@ -89,6 +89,8 @@ Resources:
           # (optional) settings for telegram
           TELEGRAM_BOT_TOKEN: ""
           TELEGRAM_CHAT_ID: ""
+          # (optional) settings for slack
+          SLACK_WEBHOOK_URL: ""
       Timeout: 60
       TracingConfig:
         Mode: "Active"

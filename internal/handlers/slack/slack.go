@@ -1,32 +1,33 @@
-package telegram
+package slack
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	"github.com/mmcdole/gofeed"
 	"github.com/rs/zerolog/log"
 )
 
-const telegramSendMessageEndpoint = "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s"
-
 type Handler struct {
-	token  string
-	chatID string
+	url string
 }
 
-func New(token, chatID string) *Handler {
+type slackMessage struct {
+	Text string `json:"text"`
+}
+
+func New(url string) *Handler {
 	return &Handler{
-		token:  token,
-		chatID: chatID,
+		url: url,
 	}
 }
 
 func (h *Handler) String() string {
-	return "telegram"
+	return "slack"
 }
 
 func (h *Handler) Handle(i *gofeed.Item) error {
@@ -35,21 +36,26 @@ func (h *Handler) Handle(i *gofeed.Item) error {
 	text += fmt.Sprintf("Description: %s\n", truncate(i.Description, 100))
 	text += fmt.Sprintf("Published: %s\n", i.Published)
 	text += fmt.Sprintf("Link: %s\n", i.Link)
-	getURL := fmt.Sprintf(telegramSendMessageEndpoint, h.token, h.chatID, url.QueryEscape(text))
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, getURL, nil)
+	m := slackMessage{Text: text}
+	b, err := json.Marshal(m)
 	if err != nil {
 		return err
 	}
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, h.url, bytes.NewBuffer(b))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-type", "application/json")
 	rc, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer rc.Body.Close()
-	b, err := ioutil.ReadAll(rc.Body)
+	b, err = ioutil.ReadAll(rc.Body)
 	if err != nil {
 		return err
 	}
-	log.Info().Bytes("response_body", b).Int("response_code", rc.StatusCode).Msg("successfully sent message to telegram")
+	log.Info().Bytes("response_body", b).Int("response_code", rc.StatusCode).Msg("successfully sent message to slack")
 	return nil
 }
 
