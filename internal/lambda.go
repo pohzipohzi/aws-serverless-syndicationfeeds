@@ -25,11 +25,6 @@ var (
 func Main() error {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
-	ha := handlers.All()
-	if len(ha) == 0 {
-		return errors.New("no handler configured")
-	}
-
 	if envDdbTableName == "" {
 		return errors.New("ddb table name not configured")
 	}
@@ -37,6 +32,11 @@ func Main() error {
 	urls := []string{}
 	if err := json.Unmarshal([]byte(envUrls), &urls); err != nil {
 		return fmt.Errorf("failed to unmarshal urls: %w", err)
+	}
+
+	ha := handlers.All()
+	if len(ha) == 0 {
+		log.Info().Int("len_handlers", len(ha)).Msg("configured handlers")
 	}
 
 	var errs *multierror.Error
