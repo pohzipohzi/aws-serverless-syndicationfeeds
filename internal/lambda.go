@@ -1,12 +1,9 @@
 package internal
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"lambda-feed-notifier/internal/handlers"
 	"os"
-	"sort"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -17,21 +14,17 @@ import (
 )
 
 //nolint:gochecknoglobals
-var (
-	envUrls         = os.Getenv("URLS")
-	envDdbTableName = os.Getenv("DDB_TABLE_NAME")
-)
+var envDdbTableName = os.Getenv("DDB_TABLE_NAME")
 
-func Main() error {
+type input struct {
+	URL string `json:"url"`
+}
+
+func Main(in input) error {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	if envDdbTableName == "" {
 		return errors.New("ddb table name not configured")
-	}
-
-	urls := []string{}
-	if err := json.Unmarshal([]byte(envUrls), &urls); err != nil {
-		return fmt.Errorf("failed to unmarshal urls: %w", err)
 	}
 
 	ha := handlers.All()
@@ -46,35 +39,32 @@ func Main() error {
 		errs = multierror.Append(errs, err)
 	}
 	ddb := dynamodb.New(sess)
-	for _, u := range urls {
-		feed, err := fp.ParseURL(u)
-		if err != nil {
-			errs = multierror.Append(errs, err)
+	feed, err := fp.ParseURL(in.URL)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+		return errs.ErrorOrNil()
+	}
+	log.Info().Int("len_items", len(feed.Items)).Str("url", in.URL).Msg("successfully parsed feed url")
+	ddbItems, err := ddbGetItems(ddb, feed)
+	if err != nil {
+		errs = multierror.Append(errs, err)
+		return errs.ErrorOrNil()
+	}
+	for _, i := range feed.Items {
+		if !shouldHandleItem(feed, i, ddbItems) {
+			log.Info().Str("guid", i.GUID).Msg("skipped handling item")
 			continue
 		}
-		log.Info().Int("len_items", len(feed.Items)).Str("url", u).Msg("successfully parsed feed url")
-		sort.Sort(feed) // sort items by publish time
-		ddbItems, err := ddbGetItems(ddb, feed)
+		err = ddbUpdateItem(ddb, feed, i)
 		if err != nil {
 			errs = multierror.Append(errs, err)
-			continue
 		}
-		for _, i := range feed.Items {
-			if !shouldHandleItem(feed, i, ddbItems) {
-				log.Info().Str("guid", i.GUID).Msg("skipped handling item")
-				continue
-			}
-			err = ddbUpdateItem(ddb, feed, i)
+		for _, h := range ha {
+			err = h.Handle(i)
 			if err != nil {
 				errs = multierror.Append(errs, err)
-			}
-			for _, h := range ha {
-				err = h.Handle(i)
-				if err != nil {
-					errs = multierror.Append(errs, err)
-				} else {
-					log.Info().Stringer("handler", h).Msg("successfully handled item")
-				}
+			} else {
+				log.Info().Stringer("handler", h).Msg("successfully handled item")
 			}
 		}
 	}

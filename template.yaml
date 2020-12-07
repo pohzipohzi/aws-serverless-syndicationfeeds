@@ -64,14 +64,12 @@ Resources:
        Fn::GetAtt:
          - "LambdaRole"
          - "Arn"
-     Handler: "main"
+     Handler: "main" # any value seems to work here
      CodeUri: "."
      Environment:
        Variables:
          DDB_TABLE_NAME:
            Ref: "DynamoDBTable"
-         # (required) a json string list of urls that we want to scrape
-         URLS: "[\"change\",\"me\"]"
          # (optional) settings for telegram
          TELEGRAM_BOT_TOKEN: ""
          TELEGRAM_CHAT_ID: ""
@@ -92,6 +90,7 @@ Resources:
               - "LambdaFunction"
               - "Arn"
           Id: "LambdaFunctionId"
+          Input: "{\"url\":\"changeme\"}"
   PermissionForEventsToInvokeLambda: 
     Type: "AWS::Lambda::Permission"
     Properties: 

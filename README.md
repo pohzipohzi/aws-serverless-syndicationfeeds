@@ -19,5 +19,6 @@ This project leverages AWS's [Serverless Application Model (SAM)](https://docs.a
 First configure Lambda environment variables in `template.yaml` (see comments in `Resources.LambdaFunction.Properties.Environment.Variables` for more information), then simply run:
 
 ```
+CGO_ENABLED=0 sam build
 sam deploy --guided
 ```
