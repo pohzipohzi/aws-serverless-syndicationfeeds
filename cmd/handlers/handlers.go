@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"fmt"
-	"lambda-feed-notifier/internal/handlers/slack"
-	"lambda-feed-notifier/internal/handlers/telegram"
+	"lambda-feed-notifier/cmd/handlers/slack"
+	"lambda-feed-notifier/cmd/handlers/telegram"
 	"os"
 
 	"github.com/mmcdole/gofeed"

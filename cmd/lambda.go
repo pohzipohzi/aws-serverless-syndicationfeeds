@@ -1,10 +1,11 @@
-package internal
+package main
 
 import (
 	"errors"
-	"lambda-feed-notifier/internal/handlers"
+	"lambda-feed-notifier/cmd/handlers"
 	"os"
 
+	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/hashicorp/go-multierror"
@@ -20,7 +21,11 @@ type input struct {
 	URL string `json:"url"`
 }
 
-func Main(in input) error {
+func main() {
+	lambda.Start(handler)
+}
+
+func handler(in input) error {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	if envDdbTableName == "" {
