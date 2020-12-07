@@ -66,6 +66,12 @@ Resources:
          - "Arn"
      Handler: "main" # any value seems to work here
      CodeUri: "cmd/"
+     Events:
+       ScheduledRule:
+         Type: "Schedule"
+         Properties:
+           Schedule: "rate(5 minutes)"
+           Input: "{\"url\":\"changeme\"}"
      Environment:
        Variables:
          DDB_TABLE_NAME:
@@ -77,28 +83,3 @@ Resources:
          SLACK_WEBHOOK_URL: ""
      Timeout: 60
      Tracing: "Active"
-  ScheduledRule: 
-    Type: "AWS::Events::Rule"
-    Properties: 
-      Description: "ScheduledRule"
-      ScheduleExpression: "rate(5 minutes)"
-      State: "ENABLED"
-      Targets: 
-        - 
-          Arn: 
-            Fn::GetAtt: 
-              - "LambdaFunction"
-              - "Arn"
-          Id: "LambdaFunctionId"
-          Input: "{\"url\":\"changeme\"}"
-  PermissionForEventsToInvokeLambda: 
-    Type: "AWS::Lambda::Permission"
-    Properties: 
-      FunctionName:
-        Ref: "LambdaFunction"
-      Action: "lambda:InvokeFunction"
-      Principal: "events.amazonaws.com"
-      SourceArn: 
-        Fn::GetAtt: 
-          - "ScheduledRule"
-          - "Arn"
