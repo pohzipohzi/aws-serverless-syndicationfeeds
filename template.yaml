@@ -1,8 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
+Transform: "AWS::Serverless-2016-10-31"
 Resources:
-  DynamoDBTable: 
+  DynamoDBTable:
     Type: "AWS::DynamoDB::Table"
-    Properties: 
+    Properties:
       AttributeDefinitions: 
         - 
           AttributeName: "Title"
@@ -49,51 +50,35 @@ Resources:
               - "dynamodb:BatchGetItem"
               - "dynamodb:UpdateItem"
             Resource:
-              Fn::GetAtt: 
+              Fn::GetAtt:
                 - "DynamoDBTable"
                 - "Arn"
       Roles:
         -
           Ref: "LambdaRole"
   LambdaFunction:
-    Type: "AWS::Lambda::Function"
+    Type: "AWS::Serverless::Function"
     Properties:
-      # AWS allows us to deploy our lambda function via direct upload or S3.
-      # Within the CloudFormation template, the Code.ZipFile option is only
-      # supported on some no-go runtimes, leaving us with S3 as the remaining
-      # code deployment option. Creating an S3 bucket then referencing it in
-      # the CloudFormation template however results in a situation where the
-      # newly created bucket will not contain the zip file we want to upload,
-      # thus referencing via S3Key will fail. The alternative would be to first
-      # create the bucket before deploying the template, as suggested in
-      # https://github.com/awsdocs/aws-lambda-developer-guide/tree/master/sample-apps/blank-go,
-      # which causes our CloudFormation stack to be incomplete
-      #
-      # Here we opt for a "less cumbersome" approach where we create the
-      # lambda function in a runtime that supports Code.ZipFile, before
-      # directly modifying the function via CLI
-      Runtime: nodejs12.x
-      Role:
-        Fn::GetAtt: 
-          - "LambdaRole"
-          - "Arn"
-      Handler: "main"
-      Code:
-        ZipFile: "placeholder"
-      Environment:
-        Variables:
-          DDB_TABLE_NAME:
-            Ref: "DynamoDBTable"
-          # (required) a json string list of urls that we want to scrape
-          URLS: "[\"change\",\"me\"]"
-          # (optional) settings for telegram
-          TELEGRAM_BOT_TOKEN: ""
-          TELEGRAM_CHAT_ID: ""
-          # (optional) settings for slack
-          SLACK_WEBHOOK_URL: ""
-      Timeout: 60
-      TracingConfig:
-        Mode: "Active"
+     Runtime: go1.x
+     Role:
+       Fn::GetAtt:
+         - "LambdaRole"
+         - "Arn"
+     Handler: "main"
+     CodeUri: "."
+     Environment:
+       Variables:
+         DDB_TABLE_NAME:
+           Ref: "DynamoDBTable"
+         # (required) a json string list of urls that we want to scrape
+         URLS: "[\"change\",\"me\"]"
+         # (optional) settings for telegram
+         TELEGRAM_BOT_TOKEN: ""
+         TELEGRAM_CHAT_ID: ""
+         # (optional) settings for slack
+         SLACK_WEBHOOK_URL: ""
+     Timeout: 60
+     Tracing: "Active"
   ScheduledRule: 
     Type: "AWS::Events::Rule"
     Properties: 

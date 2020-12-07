@@ -12,10 +12,12 @@ Scrapes rss/atom feeds and notifies configured recipients of new items via AWS L
 
 Costing depends on the time it takes to scrape and notify feeds, as well as the scraping interval. At the time of writing, scraping 5 feeds of around 10 items each and sending messages to a telegram bot every 5 minutes is within free tier.
 
-## Usage
+## Deployment
 
-Configure Lambda environment variables in `template.yaml` (see comments in `Resources.LambdaFunction.Properties.Environment.Variables` for more information), then simply run:
+This project leverages AWS's [Serverless Application Model (SAM)](https://docs.aws.amazon.com/serverless-application-model/) for deployment.
+
+First configure Lambda environment variables in `template.yaml` (see comments in `Resources.LambdaFunction.Properties.Environment.Variables` for more information), then simply run:
 
 ```
-./deploy <cloudformation-stack-name> <cloudformation-template-filepath>
+sam deploy --guided
 ```
