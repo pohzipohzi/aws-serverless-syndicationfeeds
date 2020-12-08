@@ -2,12 +2,11 @@ package main
 
 import (
 	schema "aws-serverless-syndicationfeeds/cmd/ddb_schema"
+	"log"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/mmcdole/gofeed"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -15,10 +14,9 @@ func main() {
 }
 
 func handler(e events.DynamoDBEvent) error {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	for _, r := range e.Records {
 		item := feedItemFromImage(r.Change.NewImage)
-		log.Info().Msgf("Received feed item: %v\n", item)
+		log.Printf("Received feed item: %v\n", item)
 	}
 	return nil
 }

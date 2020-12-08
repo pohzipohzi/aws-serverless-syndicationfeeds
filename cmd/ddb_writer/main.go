@@ -3,6 +3,7 @@ package main
 import (
 	schema "aws-serverless-syndicationfeeds/cmd/ddb_schema"
 	"errors"
+	"log"
 	"os"
 	"time"
 
@@ -12,8 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/hashicorp/go-multierror"
 	"github.com/mmcdole/gofeed"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 const envDdbTableName = "DDB_TABLE_NAME"
@@ -27,8 +26,6 @@ func main() {
 }
 
 func handler(in input) error {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-
 	ddbTableName := os.Getenv(envDdbTableName)
 	if ddbTableName == "" {
 		return errors.New("ddb table name not configured")
@@ -46,7 +43,7 @@ func handler(in input) error {
 		errs = multierror.Append(errs, err)
 		return errs.ErrorOrNil()
 	}
-	log.Info().Int("len_items", len(feed.Items)).Str("url", in.URL).Msg("successfully parsed feed url")
+	log.Printf("retrieved %d items\n", len(feed.Items))
 	for _, i := range feed.Items {
 		err = writeFeedItem(ddb, ddbTableName, feed, i)
 		if err != nil {
