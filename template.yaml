@@ -24,47 +24,22 @@ Resources:
       TableName: "Feed"
       StreamSpecification:
         StreamViewType: "NEW_IMAGE"
-  DdbWriterRole:
-    Type: "AWS::IAM::Role"
-    Properties: 
-      AssumeRolePolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-          - 
-            Effect: "Allow"
-            Principal: 
-              Service: 
-                - "lambda.amazonaws.com"
-            Action: 
-              - "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  DdbWriterRolePolicy:
-    Type: "AWS::IAM::Policy"
-    Properties: 
-      PolicyName: "DynamoDBLimitedAccess"
-      PolicyDocument: 
-        Version: "2012-10-17"
-        Statement: 
-          - 
-            Effect: "Allow"
-            Action:
-              - "dynamodb:UpdateItem"
-            Resource:
-              Fn::GetAtt:
-                - "DynamoDBTable"
-                - "Arn"
-      Roles:
-        -
-          Ref: "DdbWriterRole"
   DdbWriter:
     Type: "AWS::Serverless::Function"
     Properties:
      Runtime: go1.x
-     Role:
-       Fn::GetAtt:
-         - "DdbWriterRole"
-         - "Arn"
+     Policies:
+       - "AWSLambdaBasicExecutionRole"
+       - Version: "2012-10-17"
+         Statement:
+           -
+             Effect: "Allow"
+             Action:
+               - "dynamodb:UpdateItem"
+             Resource:
+               Fn::GetAtt:
+                 - "DynamoDBTable"
+                 - "Arn"
      Handler: "main"
      CodeUri: "cmd/ddb_writer/"
      Events:
@@ -84,30 +59,13 @@ Resources:
            Ref: "DynamoDBTable"
      Timeout: 60
      Tracing: "Active"
-  DdbStreamReaderRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          -
-            Effect: "Allow"
-            Principal:
-              Service:
-                - "lambda.amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   DdbStreamReader:
     Type: "AWS::Serverless::Function"
     Properties:
      Runtime: go1.x
-     Role:
-       Fn::GetAtt:
-         - "DdbStreamReaderRole"
-         - "Arn"
+     Policies:
+       - "AWSLambdaBasicExecutionRole"
+       - "AWSLambdaInvocation-DynamoDB"
      Handler: "main"
      CodeUri: "cmd/ddb_stream_reader/"
      Events:
