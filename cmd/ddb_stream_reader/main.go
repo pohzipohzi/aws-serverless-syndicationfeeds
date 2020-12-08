@@ -1,7 +1,7 @@
 package main
 
 import (
-	schema "lambda-feed-notifier/cmd/ddb_schema"
+	schema "aws-serverless-syndicationfeeds/cmd/ddb_schema"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"

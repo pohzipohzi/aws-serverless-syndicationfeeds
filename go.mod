@@ -1,4 +1,4 @@
-module lambda-feed-notifier
+module aws-serverless-syndicationfeeds
 
 go 1.15
 
@@ -8,5 +8,4 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/mmcdole/gofeed v1.1.0
 	github.com/rs/zerolog v1.20.0
-	github.com/stretchr/testify v1.6.1
 )

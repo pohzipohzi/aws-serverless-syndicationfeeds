@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	schema "lambda-feed-notifier/cmd/ddb_schema"
+	schema "aws-serverless-syndicationfeeds/cmd/ddb_schema"
 	"os"
 	"time"
 

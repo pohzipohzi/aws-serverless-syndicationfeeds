@@ -1,8 +1,8 @@
-# lambda-feed-notifier
-[![Build Status](https://travis-ci.com/pohzipohzi/lambda-feed-notifier.svg?branch=main)](https://travis-ci.com/pohzipohzi/lambda-feed-notifier)
-[![Coverage Status](https://coveralls.io/repos/github/pohzipohzi/lambda-feed-notifier/badge.svg?branch=main)](https://coveralls.io/github/pohzipohzi/lambda-feed-notifier?branch=main)
+# AWS Serverless Syndication Feeds
+[![Build Status](https://travis-ci.com/pohzipohzi/aws-serverless-syndicationfeeds.svg?branch=main)](https://travis-ci.com/pohzipohzi/aws-serverless-syndicationfeeds)
+[![Coverage Status](https://coveralls.io/repos/github/pohzipohzi/aws-serverless-syndicationfeeds/badge.svg?branch=main)](https://coveralls.io/github/pohzipohzi/aws-serverless-syndicationfeeds?branch=main)
 
-This is a simple AWS-based system that scrapes syndication feeds and writes feed items into a DynamoDB table via Lambda. The Lambda function can be set up to automatically trigger from scheduled rules configured on EventBridge. DynamoDB streams can be used in conjunction with other AWS services to do useful work on new feed items. A CloudFormation template is provided to provision the required resources.
+This is a simple AWS-based system that scrapes syndication feeds and writes feed items into a DynamoDB table via Lambda. Scheduled rules can be set up on EventBridge to automatically trigger the Lambda function for each target URL. DynamoDB streams can be used in conjunction with other AWS services to do useful work on new feed items. A CloudFormation template is provided to provision the required resources.
 
 <p align="center">
   <img src="arch.svg">
