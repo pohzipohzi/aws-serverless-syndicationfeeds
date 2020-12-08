@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	schema "aws-serverless-syndicationfeeds/cmd/ddb_schema"
+	"errors"
 	"os"
 	"time"
 
