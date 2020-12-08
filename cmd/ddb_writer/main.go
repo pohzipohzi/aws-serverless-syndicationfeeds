@@ -3,6 +3,7 @@ package main
 import (
 	schema "aws-serverless-syndicationfeeds/cmd/ddb_schema"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -11,7 +12,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/hashicorp/go-multierror"
 	"github.com/mmcdole/gofeed"
 )
 
@@ -30,28 +30,26 @@ func handler(in input) error {
 	if ddbTableName == "" {
 		return errors.New("ddb table name not configured")
 	}
-
-	var errs *multierror.Error
 	fp := gofeed.NewParser()
 	sess, err := session.NewSession()
 	if err != nil {
-		errs = multierror.Append(errs, err)
+		return fmt.Errorf("failed to start new aws session: %w", err)
 	}
 	ddb := dynamodb.New(sess)
 	feed, err := fp.ParseURL(in.URL)
 	if err != nil {
-		errs = multierror.Append(errs, err)
-		return errs.ErrorOrNil()
+		return fmt.Errorf("failed to parse url: %w", err)
 	}
 	log.Printf("retrieved %d items\n", len(feed.Items))
 	for _, i := range feed.Items {
 		err = writeFeedItem(ddb, ddbTableName, feed, i)
 		if err != nil {
-			errs = multierror.Append(errs, err)
+			log.Printf("failed to write %s: %v\n", i.GUID, err)
+		} else {
+			log.Printf("successfully wrote %s", i.GUID)
 		}
 	}
-
-	return errs.ErrorOrNil()
+	return nil
 }
 
 func writeFeedItem(ddb *dynamodb.DynamoDB, table string, f *gofeed.Feed, i *gofeed.Item) error {
