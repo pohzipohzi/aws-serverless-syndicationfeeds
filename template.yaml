@@ -22,7 +22,9 @@ Resources:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
       TableName: "Feed"
-  LambdaRole: 
+      StreamSpecification:
+        StreamViewType: "NEW_IMAGE"
+  DdbWriterRole:
     Type: "AWS::IAM::Role"
     Properties: 
       AssumeRolePolicyDocument: 
@@ -37,7 +39,7 @@ Resources:
               - "sts:AssumeRole"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-  LambdaRolePolicy: 
+  DdbWriterRolePolicy:
     Type: "AWS::IAM::Policy"
     Properties: 
       PolicyName: "DynamoDBLimitedAccess"
@@ -47,7 +49,6 @@ Resources:
           - 
             Effect: "Allow"
             Action:
-              - "dynamodb:BatchGetItem"
               - "dynamodb:UpdateItem"
             Resource:
               Fn::GetAtt:
@@ -55,19 +56,24 @@ Resources:
                 - "Arn"
       Roles:
         -
-          Ref: "LambdaRole"
-  LambdaFunction:
+          Ref: "DdbWriterRole"
+  DdbWriter:
     Type: "AWS::Serverless::Function"
     Properties:
      Runtime: go1.x
      Role:
        Fn::GetAtt:
-         - "LambdaRole"
+         - "DdbWriterRole"
          - "Arn"
-     Handler: "main" # any value seems to work here
-     CodeUri: "cmd/"
+     Handler: "main"
+     CodeUri: "cmd/ddb_writer/"
      Events:
-       ScheduledRule:
+       ScheduledRule1:
+         Type: "Schedule"
+         Properties:
+           Schedule: "rate(2 minutes)"
+           Input: "{\"url\":\"changeme\"}"
+       ScheduledRule2:
          Type: "Schedule"
          Properties:
            Schedule: "rate(5 minutes)"
@@ -76,10 +82,42 @@ Resources:
        Variables:
          DDB_TABLE_NAME:
            Ref: "DynamoDBTable"
-         # (optional) settings for telegram
-         TELEGRAM_BOT_TOKEN: ""
-         TELEGRAM_CHAT_ID: ""
-         # (optional) settings for slack
-         SLACK_WEBHOOK_URL: ""
+     Timeout: 60
+     Tracing: "Active"
+  DdbStreamReaderRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AWSLambdaInvocation-DynamoDB"
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  DdbStreamReader:
+    Type: "AWS::Serverless::Function"
+    Properties:
+     Runtime: go1.x
+     Role:
+       Fn::GetAtt:
+         - "DdbStreamReaderRole"
+         - "Arn"
+     Handler: "main"
+     CodeUri: "cmd/ddb_stream_reader/"
+     Events:
+       DdbStreamEvent:
+         Type: "DynamoDB"
+         Properties:
+           StartingPosition: "LATEST"
+           Stream:
+             Fn::GetAtt:
+               - "DynamoDBTable"
+               - "StreamArn"
      Timeout: 60
      Tracing: "Active"
