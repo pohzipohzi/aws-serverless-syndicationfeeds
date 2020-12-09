@@ -15,7 +15,7 @@ func Test_handler(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/xml")
-		io.WriteString(w, `<rss version="2.0"></rss>`)
+		_, _ = io.WriteString(w, `<rss version="2.0"></rss>`)
 	}))
 	fp := gofeed.NewParser()
 	fp.Client = &http.Client{Transport: &http.Transport{
